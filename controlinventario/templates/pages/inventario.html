@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventario - Distablasa</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/inventario.css' %}">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"></script>
+</head>
+<body>
+    <header class="dashboard-header">
+        <img src="{% static 'img/logonovocentro.png' %}" alt="Logo" class="logo">
+        <h1>Control de Inventario</h1>
+    </header>
+
+    <div class="dashboard-container">
+        <aside class="menu">
+            <nav>
+                <ul>
+                    <li>
+                        <a href="{% url 'listado_productos' %}" 
+                           class="{% if seccion_activa == 'inventario' %}activo{% endif %}">
+                           Ver Inventario
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'agregar_producto' %}" 
+                           class="{% if seccion_activa == 'agregar_producto' %}activo{% endif %}">
+                           Agregar Producto
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'historial_cambios' %}" 
+                           class="{% if seccion_activa == 'historial_cambios' %}activo{% endif %}">
+                           Historial de cambios
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+            <div class="logout">
+                <a href="{% url 'logout_bodeguero' %}" class="logout-btn">Cerrar Sesión</a>
+            </div>
+        </aside>
+
+        <!-- Contenido principal -->
+        <main class="content">
+            {% if seccion_activa == 'inventario' %}
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h2>Inventario de Productos</h2>
+                <div class="d-grid gap-2 d-md-block">
+                    <button id="toggle-view" class="btn btn-secondary btn-vista" type="button">Vista</button>
+                </div>
+            </div>            
+                <div id="tabla-vista" class="vista">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Código</th>
+                                <th>Nombre</th>
+                                <th>Familia</th>
+                                <th>Largo (m)</th>
+                                <th>Ancho (m)</th>
+                                <th>Grosor (mm)</th>
+                                <th>Existencias</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if productos %}
+                                {% for producto in productos %}
+                                    <tr>
+                                        <td>{{ producto.codigo }}</td>
+                                        <td>{{ producto.nombre }}</td>
+                                        <td>{{ producto.familia }}</td>
+                                        <td>{{ producto.largo }}</td>
+                                        <td>{{ producto.ancho }}</td>
+                                        <td>{{ producto.grosor }}</td>
+                                        <td>{{ producto.existencias }}</td>
+                                        <td>
+                                            <a href="{% url 'editar_producto' producto.pk %}" class="btn btn-edit">Editar</a>
+                                            <a href="{% url 'eliminar_producto' producto.pk %}" class="btn btn-delete">Eliminar</a>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="8" class="no-data">No hay productos en el inventario.</td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <div id="tarjetas-vista" class="vista" style="display: none;">
+                    <div class="row">
+                        {% if productos %}
+                            {% for producto in productos %}
+                                <div class="col-md-4">
+                                    <div class="card mb-3" style="max-width: 540px;">
+                                        <div class="row g-0">
+                                            <div class="col-md-4">
+                                                {% if producto.imagen %}
+                                                    <img src="{% static producto.imagen %}" class="img-fluid rounded-start" alt="{{ producto.nombre }}">
+                                                {% else %}
+                                                    <img src="{% static 'img/placeholder.png' %}" class="img-fluid rounded-start" alt="Sin imagen">
+                                                {% endif %}
+                                            </div>
+                                            <div class="col-md-8">
+                                                <div class="card-body">
+                                                    <h5 class="card-title">{{ producto.nombre }}</h5>
+                                                    <p class="card-text">Familia: {{ producto.familia }}</p>
+                                                    <p class="card-text">Medida: {{ producto.largo }}m x {{ producto.ancho }}m x {{ producto.grosor }}mm</p>
+                                                    <p class="card-text">Existencias: {{ producto.existencias }}</p>
+                                                    <div class="tarjeta-acciones">
+                                                        <a href="{% url 'editar_producto' producto.pk %}" class="btn btn-primary btn-sm">Editar</a>
+                                                        <a href="{% url 'eliminar_producto' producto.pk %}" class="btn btn-danger btn-sm">Eliminar</a>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <p class="no-data">No hay productos en el inventario.</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+            {% elif seccion_activa == 'agregar_producto' %}
+            <h2>Agregar Producto</h2>
+            <form id="form-agregar-producto" method="POST">
+            {% csrf_token %}
+            <p><strong>Código:</strong> {{ form.instance.codigo|default:'Automático' }}</p>
+        
+            <div class="form-container">
+            <div class="form-left">
+                {{ form.nombre.label_tag }} {{ form.nombre }}
+                {{ form.familia.label_tag }} {{ form.familia }}
+                {{ form.existencias.label_tag }} {{ form.existencias }}
+            </div>
+            <div class="form-right">
+                {{ form.largo.label_tag }} {{ form.largo }}
+                {{ form.ancho.label_tag }} {{ form.ancho }}
+                {{ form.grosor.label_tag }} {{ form.grosor }}
+            </div>
+            </div>
+        
+            <div class="mb-3">
+                <label for="imagen-select" class="form-label">Seleccionar Imagen</label>
+                {{ form.imagen }}
+                <div class="preview-container mt-3">
+                    <img id="preview-imagen" src="{% static 'img/placeholder.png' %}" alt="Previsualización de imagen" class="img-thumbnail" style="max-width: 200px; display: none;">
+                </div>
+            </div>
+        
+            <button type="submit" class="btn-save">Guardar</button>
+        </form>
+        <div id="form-mensaje" class="mensaje"></div>
+
+            {% elif seccion_activa == 'editar_producto' %}
+            <h2>Editar Producto: {{ producto.nombre }}</h2>
+            <p><strong>Código:</strong> {{ producto.codigo }}</p>
+            <form id="form-editar-producto" method="POST">
+            {% csrf_token %}
+            <div class="form-container">
+                <div class="form-left">
+                {{ form.nombre.label_tag }} {{ form.nombre }}
+                {{ form.familia.label_tag }} {{ form.familia }}
+                {{ form.existencias.label_tag }} {{ form.existencias }}
+                </div>
+                <div class="form-right">
+                {{ form.largo.label_tag }} {{ form.largo }}
+                {{ form.ancho.label_tag }} {{ form.ancho }}
+                {{ form.grosor.label_tag }} {{ form.grosor }}
+                </div>
+            </div>
+        
+            <div class="mb-3">
+                <label for="imagen-select" class="form-label">Seleccionar Imagen</label>
+                {{ form.imagen }}
+                <div class="preview-container mt-3">
+                    <img id="preview-imagen" src="{% static producto.imagen %}" alt="Previsualización de imagen" class="img-thumbnail" style="max-width: 200px;">
+                </div>
+            </div>
+        
+            <label for="motivo">Motivo de Edición:</label>
+            <textarea id="motivo" name="motivo" class="form-control" rows="3" required></textarea>
+        
+            <button type="submit" class="btn-save">Guardar cambios</button>
+                </form>
+            <div id="form-mensaje" class="mensaje"></div>
+
+            {% elif seccion_activa == 'eliminar_producto' %}
+                <h2>Eliminar Producto: {{ producto.nombre }}</h2>
+                <p style="text-align: center; font-size: 16px; margin-bottom: 20px; color: #333;">
+                    ¿Estás seguro de que deseas eliminar el producto <strong>{{ producto.nombre }}</strong>?
+                </p>
+                <form id="form-eliminar-producto" method="POST">
+                    {% csrf_token %}
+                    <label for="motivo">Motivo de Eliminación:</label>
+                    <textarea id="motivo" name="motivo" class="form-control" rows="3" required></textarea>
+                    <button type="submit" class="btn btn-delete">Eliminar Producto</button>
+                </form>
+                <div id="form-mensaje" class="mensaje"></div>
+
+            {% elif seccion_activa == 'historial_cambios' %}
+                <h2 class="historial-titulo">Historial de Cambios</h2>
+                <table class="historial-tabla">
+                    <thead>
+                        <tr>
+                            <th>Usuario</th>
+                            <th>Acción</th>
+                            <th>Producto</th>
+                            <th>Motivo</th>
+                            <th>Fecha y Hora</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if cambios %}
+                            {% for cambio in cambios %}
+                                <tr>
+                                    <td>{{ cambio.usuario }}</td>
+                                    <td>{{ cambio.accion }}</td>
+                                    <td>{{ cambio.producto }}</td>
+                                    <td>{{ cambio.motivo }}</td>
+                                    <td>{{ cambio.fecha_hora|date:"d/m/Y H:i:s" }}</td>
+                                </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="5" class="historial-no-data">No hay cambios registrados.</td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            {% endif %}
+        </main>
+    </div>
+
+    <script>
+        $(document).ready(function () {
+            // Manejar Agregar Producto
+            $('#form-agregar-producto').on('submit', function (e) {
+                e.preventDefault();
+                var formData = $(this).serialize();
+                $.ajax({
+                    url: "{% url 'agregar_producto' %}",
+                    type: "POST",
+                    data: formData,
+                    success: function (response) {
+                        if (response.success) {
+                            $('#form-mensaje').html(response.message)
+                                .css('color', 'green')
+                                .fadeIn()
+                                .delay(3000)
+                                .fadeOut();
+                            $('#form-agregar-producto')[0].reset();
+                            $('#preview-imagen').attr('src', "{% static 'img/placeholder.png' %}")
+                                .hide();
+                        } else {
+                            $('#form-mensaje').html(response.message)
+                                .css('color', 'red')
+                                .fadeIn()
+                                .delay(3000)
+                                .fadeOut();
+                        }
+                    },
+                    error: function () {
+                        $('#form-mensaje').html('Error al procesar la solicitud.')
+                            .css('color', 'red')
+                            .fadeIn()
+                            .delay(3000)
+                            .fadeOut();
+                    }
+                });
+            });
+    
+            // Manejar Editar Producto
+            $('#form-editar-producto').on('submit', function (e) {
+                e.preventDefault();
+                var formData = $(this).serialize();
+                $.ajax({
+                    url: window.location.href,
+                    type: "POST",
+                    data: formData,
+                    success: function (response) {
+                        if (response.success) {
+                            $('#form-mensaje').html(response.message)
+                                .css('color', 'green')
+                                .fadeIn()
+                                .delay(3000)
+                                .fadeOut();
+                            location.href = "{% url 'listado_productos' %}";
+                        } else {
+                            $('#form-mensaje').html(response.message)
+                                .css('color', 'red')
+                                .fadeIn()
+                                .delay(3000)
+                                .fadeOut();
+                        }
+                    },
+                    error: function () {
+                        $('#form-mensaje').html('Error al procesar la solicitud.')
+                            .css('color', 'red')
+                            .fadeIn()
+                            .delay(3000)
+                            .fadeOut();
+                    }
+                });
+            });
+    
+            // Manejar Eliminar Producto
+            $('#form-eliminar-producto').on('submit', function (e) {
+                e.preventDefault();
+                var formData = $(this).serialize();
+                $.ajax({
+                    url: window.location.href,
+                    type: "POST",
+                    data: formData,
+                    success: function (response) {
+                        if (response.success) {
+                            $('#form-mensaje').html(response.message)
+                                .css('color', 'green')
+                                .fadeIn()
+                                .delay(3000)
+                                .fadeOut();
+                            location.href = "{% url 'listado_productos' %}";
+                        } else {
+                            $('#form-mensaje').html(response.message)
+                                .css('color', 'red')
+                                .fadeIn()
+                                .delay(3000)
+                                .fadeOut();
+                        }
+                    },
+                    error: function () {
+                        $('#form-mensaje').html('Error al procesar la solicitud.')
+                            .css('color', 'red')
+                            .fadeIn()
+                            .delay(3000)
+                            .fadeOut();
+                    }
+                });
+            });
+    
+            // Toggle entre tabla y tarjetas
+            $('#toggle-view').on('click', function () {
+                $('#tabla-vista').toggle();
+                $('#tarjetas-vista').toggle();
+                var buttonText = $('#toggle-view').text() === 'Vista' ? 'Vista' : 'Vista';
+                $('#toggle-view').text(buttonText);
+            });
+    
+            // Previsualizar imagen seleccionada
+            $('#imagen-select').on('change', function () {
+                var selectedOption = $(this).val();
+                var previewImagen = $('#preview-imagen');
+    
+                if (selectedOption) {
+                    previewImagen.attr('src', `/static/${selectedOption}`).show();
+                } else {
+                    previewImagen.attr('src', "{% static 'img/placeholder.png' %}").hide();
+                }
+            });
+        });
+    </script>
+    
+</body>
+</html>
