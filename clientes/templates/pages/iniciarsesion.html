@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iniciar Sesión</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/iniciarsesion.css' %}">
+</head>
+<body>
+    <header class="login-header">
+        <img src="{% static 'img/logonovocentro.png' %}" alt="Logo" class="logo">
+    </header>
+    <main>
+        <div class="login-container">
+            <h1>Iniciar Sesión</h1>
+            <form method="POST">
+                {% csrf_token %}
+                <label for="username">Nombre de usuario:</label>
+                <input type="text" id="username" name="username" required>
+                <label for="password">Contraseña:</label>
+                <input type="password" id="password" name="password" required>
+                <button type="submit">Ingresar</button>
+            </form>
+            <p>¿No tienes una cuenta? 
+                <a href="{% url 'registro_cliente' %}">Regístrate</a>
+            </p>
+        </div>
+    </main>
+</body>
+</html>
